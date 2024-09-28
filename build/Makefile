@@ -1,5 +1,5 @@
 # use arm cross compiler
-CC = ./gcc-arm-none-eabi-6-2017-q2-update/bin/arm-none-eabi-gcc
+CC = arm-none-eabi-gcc
 
 # set rasberry pi model version
 ifeq ($(RASPI_MODEL),1)
@@ -40,28 +40,28 @@ IMG_NAME=kernel.img
 # main target - invoked by running: make build
 # 	- depends on all object and header files
 build: $(OBJECTS) $(HEADERS)
-    echo $(OBJECTS)
-    $(CC) -T linker.ld -o $(IMG_NAME) $(LFLAGS) $(OBJECTS)
+	echo $(OBJECTS)
+	$(CC) -T linker.ld -o $(IMG_NAME) $(LFLAGS) $(OBJECTS)
 
 # target - any object file that depends on the kernel source file
 $(OBJ_DIR)/%.o: $(KER_SRC)/%.c
-    mkdir -p $(@D)
-    $(CC) $(CFLAGS) -I$(KER_SRC) -I$(KER_HEAD) -c $< -o $@ $(CSRCFLAGS)
+	mkdir -p $(@D)
+	$(CC) $(CFLAGS) -I$(KER_SRC) -I$(KER_HEAD) -c $< -o $@ $(CSRCFLAGS)
 
 # target - any object file that depends on the kernel assembly files
 $(OBJ_DIR)/%.o: $(KER_SRC)/%.S
-    mkdir -p $(@D)
-    $(CC) $(CFLAGS) -I$(KER_SRC) -c $< -o $@
+	mkdir -p $(@D)
+	$(CC) $(CFLAGS) -I$(KER_SRC) -c $< -o $@
 
 # target - any object file that depends on the common source file
 $(OBJ_DIR)/%.o: $(COMMON_SRC)/%.c
-    mkdir -p $(@D)
-    $(CC) $(CFLAGS) -I$(KER_SRC) -I$(KER_HEAD) -c $< -o $@ $(CSRCFLAGS)
+	mkdir -p $(@D)
+	$(CC) $(CFLAGS) -I$(KER_SRC) -I$(KER_HEAD) -c $< -o $@ $(CSRCFLAGS)
 
 # target removes all of the compiled libraries
 clean:
-    rm -rf $(OBJ_DIR)
-    rm $(IMG_NAME)
+	rm -rf $(OBJ_DIR)
+	rm $(IMG_NAME)
 
 run: build
-    qemu-system-arm -m 1024 -M  raspi2b -serial stdio -kernel kernel.img
+	qemu-system-arm -m 1024 -M  raspi2b -serial stdio -kernel kernel.img
