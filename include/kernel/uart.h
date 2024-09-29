@@ -4,12 +4,12 @@
 #ifndef UART_H
 #define UART_H
 
-static inline void mmio_write(uint32_t reg, uint32_t data);
+void mmio_write(uint32_t reg, uint32_t data);
 
-static inline uint32_t mmio_read(uint32_t reg);
+uint32_t mmio_read(uint32_t reg);
 
 // Loop <delay> times in a way that the compiler won't optimize away
-static inline void delay(int32_t count);
+void delay(int32_t count);
 
 enum
 {
