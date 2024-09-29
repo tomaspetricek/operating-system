@@ -101,6 +101,39 @@ void mem_init(atag_t *atags)
     }
 }
 
+void *alloc_page(void)
+{
+    page_t *page;
+    void *page_mem;
+
+    if (size_page_list(&free_pages) == 0)
+        return 0;
+
+    // get free page
+    page = pop_page_list(&free_pages);
+    page->flags.kernel_page = 1;
+    page->flags.allocated = 1;
+
+    // get address the physical page metadata refers to
+    page_mem = (void *)((page - all_pages_array) * PAGE_SIZE);
+
+    // zero out the page
+    bzero(page_mem, PAGE_SIZE);
+    return page_mem;
+}
+
+void free_page(void *ptr)
+{
+    page_t *page;
+
+    // get page metadata from the physical address
+    page = all_pages_array + ((uint32_t)ptr / PAGE_SIZE);
+
+    // mark the page as free
+    page->flags.allocated = 0;
+    append_page_list(&free_pages, page);
+}
+
 void kernel_main(uint32_t r0, uint32_t r1, uint32_t atags)
 {
     (void)r0;
