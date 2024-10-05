@@ -28,7 +28,7 @@ namespace tp
 
         void deallocate_page(memory_t memory) noexcept {}
 
-        void *allocate(std::size_t amount) noexcept {}
+        memory_t allocate(std::size_t amount) noexcept {}
 
         void deallocate(memory_t memory) noexcept {}
     };
