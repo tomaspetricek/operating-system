@@ -4,8 +4,19 @@
 #include <stdint.h>
 #include <stddef.h>
 
-extern uint8_t __end;
+static void heap_init(uint32_t heap_start);
 
+typedef struct heap_segment
+{
+    struct heap_segment *next;
+    struct heap_segment *prev;
+    uint32_t is_allocated;
+    uint32_t segment_size; // includes this header
+} heap_segment_t;
+
+static heap_segment_t *heap_segment_list_head;
+
+extern uint8_t __end;
 static uint32_t num_pages;
 
 DEFINE_LIST(page);
@@ -16,7 +27,7 @@ page_list_t free_pages;
 
 void mem_init(atag_t *atags)
 {
-    uint32_t mem_size, page_array_len, kernel_pages, i;
+    uint32_t mem_size, page_array_len, kernel_pages, page_array_end, i;
 
     // get the total number of pages
     mem_size = get_mem_size(atags);
@@ -38,12 +49,30 @@ void mem_init(atag_t *atags)
         all_pages_array[i].flags.allocated = 1;
         all_pages_array[i].flags.kernel_page = 1;
     }
+    for (; i < kernel_pages + (KERNEL_HEAP_SIZE / PAGE_SIZE); i++)
+    {
+        all_pages_array[i].vaddr_mapped = i * PAGE_SIZE; // identity map the kernel pages
+        all_pages_array[i].flags.allocated = 1;
+        all_pages_array[i].flags.kernel_heap_page = 1;
+    }
+
     // map the rest of the pages as unallocated, and add them to the free list
     for (; i < num_pages; i++)
     {
         all_pages_array[i].flags.allocated = 0;
         append_page_list(&free_pages, &all_pages_array[i]);
     }
+
+    // initialize the heap
+    page_array_end = (uint32_t)&__end + page_array_len;
+    heap_init(page_array_end);
+}
+
+static void heap_init(uint32_t heap_start)
+{
+    heap_segment_list_head = (heap_segment_t *)heap_start;
+    bzero(heap_segment_list_head, sizeof(heap_segment_t));
+    heap_segment_list_head->segment_size = KERNEL_HEAP_SIZE;
 }
 
 void *alloc_page(void)
@@ -120,7 +149,7 @@ void *kmalloc(uint32_t bytes)
         best->segment_size = bytes;
     }
     best->is_allocated = 1;
-    return best + 1; // why is there the plus one?
+    return best + 1; // move to the actaul memeory
 }
 
 void kfree(void *ptr)
