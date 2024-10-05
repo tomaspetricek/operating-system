@@ -26,12 +26,14 @@ void * alloc_page(void);
 void free_page(void * ptr);
 
 typedef struct heap_segment{
-    struct heap_segment* next;
-    struct heap_segment* prev;
-    uint32_t is_allocated;
-    uint32_t segment_size; // includes this header
+	struct heap_segment* next;
+	struct heap_segment* prev;
+	uint32_t is_allocated;
+	uint32_t segment_size; // includes this header
 } heap_segment_t;
 
 void* kmalloc(uint32_t bytes);
+
+void kfree(void *ptr);
 
 #endif

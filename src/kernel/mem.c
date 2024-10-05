@@ -122,3 +122,25 @@ void *kmalloc(uint32_t bytes)
     best->is_allocated = 1;
     return best + 1; // why is there the plus one?
 }
+
+void kfree(void *ptr)
+{
+    heap_segment_t *seg = ptr - sizeof(heap_segment_t);
+    seg->is_allocated = 0;
+
+    // try to coalesce segements to the left
+    while (seg->prev != NULL && !seg->prev->is_allocated)
+    {
+        seg->prev->next = seg->next;
+        seg->prev->segment_size += seg->segment_size;
+        seg = seg->prev;
+        seg = seg->prev;
+    }
+
+    // try to coalesce segments to the right
+    while (seg->next != NULL && !seg->next->is_allocated)
+    {
+        seg->segment_size += seg->next->segment_size;
+        seg->next = seg->next->next;
+    }
+}
