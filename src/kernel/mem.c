@@ -79,3 +79,46 @@ void free_page(void *ptr)
     page->flags.allocated = 0;
     append_page_list(&free_pages, page);
 }
+
+void *kmalloc(uint32_t bytes)
+{
+    heap_segment_t *curr, *best = NULL;
+    int diff, best_diff = 0x7fffffff; // max signed int
+
+    bytes += sizeof(heap_segment_t);
+    bytes += bytes % 16 ? 16 - (bytes % 16) : 0; // what does it do?
+
+    // find allocation that is the closests in size to this request
+    for (curr = heap_segment_list_head; curr != NULL; curr = curr->next)
+    {
+        diff = curr->segment_size - bytes;
+
+        if (!curr->is_allocated && diff < best_diff && diff >= 0)
+        {
+            best = curr;
+            best_diff = diff;
+        }
+    }
+
+    // there is no free memery now
+    if (best == NULL)
+    {
+        return NULL;
+    }
+
+    // if the best difference we could come up was large, split up the segement into two
+    // since our segment headers are rather large, the criterion for splitting the segment is that
+    // when split, the segment not being requested should be twice a header size
+    if (best_diff > (int)(2 * sizeof(heap_segment_t)))
+    {
+        bzero(((void *)(best)) + bytes, sizeof(heap_segment_t));
+        curr = best->next;
+        best->next = ((void *)(best)) + bytes;
+        best->next->next = curr;
+        best->next->prev = best;
+        best->next->segment_size = best->segment_size - bytes;
+        best->segment_size = bytes;
+    }
+    best->is_allocated = 1;
+    return best + 1; // why is there the plus one?
+}
