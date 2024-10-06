@@ -149,7 +149,7 @@ void *kmalloc(uint32_t bytes)
         best->segment_size = bytes;
     }
     best->is_allocated = 1;
-    return best + 1; // move to the actaul memeory
+    return best + 1; // move to the actaul memory
 }
 
 void kfree(void *ptr)
