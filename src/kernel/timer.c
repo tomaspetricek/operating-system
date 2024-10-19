@@ -1,7 +1,6 @@
 #include <kernel/timer.h>
 #include <kernel/interrupt.c>
 
-
 static void timer_irq_handler(void)
 {
     printf("(timeout: )\n");
@@ -19,14 +18,17 @@ void timer_init(void)
     register_irq_handler(SYSTEM_TIMER_1, timer_irq_handler, timer_irq_cleaner);
 }
 
-void timer_set(uint32_t usecs) {
-        timer_regs->timer1 = timer_regs->counter_low + usecs;
+void timer_set(uint32_t usecs)
+{
+    timer_regs->timer1 = timer_regs->counter_low + usecs;
 }
 
-__attribute__ ((optimize(0))) void udelay (uint32_t usecs) {
+__attribute__((optimize(0))) void udelay(uint32_t usecs)
+{
     volatile uint32_t curr = timer_regs->counter_low;
     volatile uint32_t x = timer_regs->counter_low - curr;
-    while (x < usecs) {
+    while (x < usecs)
+    {
         x = timer_regs->counter_low - curr;
     }
 }
