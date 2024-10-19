@@ -5,9 +5,11 @@ CC = arm-none-eabi-gcc
 ifeq ($(RASPI_MODEL),1)
     CPU = arm1176jzf-s
     DIRECTIVES = -D MODEL_1
+	ARCHDIR = model1
 # use model 2 by default
 else
     CPU = cortex-a7
+	ARCHDIR = model2
 endif
 
 CFLAGS= -mcpu=$(CPU) -fpic -ffreestanding $(DIRECTIVES)
@@ -24,7 +26,7 @@ COMMON_SRC = ../src/common
 OBJ_DIR = objects
 
 # get list of all sepcific files
-KERSOURCES = $(wildcard $(KER_SRC)/*.c)
+KERSOURCES += $(wildcard $(KER_SRC)/$(ARCHDIR)/*.c)
 COMMONSOURCES = $(wildcard $(COMMON_SRC)/*.c)
 ASMSOURCES = $(wildcard $(KER_SRC)/*.S)
 
@@ -44,9 +46,9 @@ build: $(OBJECTS) $(HEADERS)
 	$(CC) -T linker.ld -o $(IMG_NAME) $(LFLAGS) $(OBJECTS)
 
 # target - any object file that depends on the kernel source file
-$(OBJ_DIR)/%.o: $(KER_SRC)/%.c
-	mkdir -p $(@D)
-	$(CC) $(CFLAGS) -I$(KER_SRC) -I$(KER_HEAD) -c $< -o $@ $(CSRCFLAGS)
+$(OBJ_DIR)/%.o: $(KER_SRC)/$(ARCHDIR)/%.c
+    mkdir -p $(@D)
+    $(CC) $(CFLAGS) -I$(KER_SRC) -I$(KER_HEAD) -c $< -o $@ $(CSRCFLAGS)
 
 # target - any object file that depends on the kernel assembly files
 $(OBJ_DIR)/%.o: $(KER_SRC)/%.S
