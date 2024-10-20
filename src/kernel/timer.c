@@ -1,10 +1,10 @@
 #include <kernel/timer.h>
+#include <kernel/process.h>
 #include <kernel/interrupt.c>
 
 static void timer_irq_handler(void)
 {
-    printf("(timeout: )\n");
-    timer_set(3000000);
+    schedule();
 }
 
 static void timer_irq_cleaner(void)
