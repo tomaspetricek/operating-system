@@ -2,6 +2,7 @@
 #include <kernel/mem.h>
 #include <kernel/interrupt.h>
 #include <kernel/timer.h>
+#include <kernel/mutex.h>
 #include <common/stdlib.h>
 
 static uint32_t next_proc_num = 1;
@@ -114,4 +115,50 @@ void create_kernel_thread(kthread_function_f thread_func, char *name, int name_l
     // add thread to the lists
     append_pcb_list(&all_proc_list, pcb);
     append_pcb_list(&run_queue, pcb);
+}
+
+void mutex_init(mutex_t *lock)
+{
+    lock->lock = 1;
+    lock->locker = 0;
+    INITIALIZE_LIST(lock->wait_queue);
+}
+
+void mutex_lock(mutex_t *lock)
+{
+    process_control_block_t *new_thread, *old_thread;
+
+    // if you don't get the lock, take self off run queue and put on to mutex wait queue
+    while (!try_lock(&lock->lock))
+    {
+
+        // ToDo: avoid code duplicity
+        // get the next thread to run. for now we are using round robin
+        DISABLE_INTERRUPTS();
+        new_thread = pop_pcb_list(&run_queue);
+        old_thread = current_process;
+        current_process = new_thread;
+
+        // append the current process to the mutex's wait queue, not on the run queue
+        append_pcb_list(&lock->wait_queue, old_thread);
+
+        // context switch
+        switch_to_thread(old_thread, new_thread);
+        ENABLE_INTERRUPTS();
+    }
+    lock->locker = current_process;
+}
+
+void mutex_unlock(mutex_t *lock)
+{
+    process_control_block_t *thread;
+    lock->lock = 1;
+    lock->locker = 1;
+
+    // if there is anyone waiting on this, put them back in the run queue
+    if (size_pcb_list(&lock->wait_queue))
+    {
+        thread = pop_pcb_list(&lock->wait_queue);
+        push_pcb_list(&run_queue, thread);
+    }
 }
